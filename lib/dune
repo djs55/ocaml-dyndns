@@ -1,0 +1,5 @@
+(library
+ (name dyndns)
+ (public_name dyndns)
+ (libraries cohttp ipaddr)
+)
