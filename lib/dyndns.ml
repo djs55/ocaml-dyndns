@@ -14,11 +14,43 @@
  * PERFORMANCE OF THIS SOFTWARE.
  *)
 
-type update = {
-  username: string;
-  password: string;
-  hostname: string list;
-  ip: Ipaddr.t list;
-}
+module Update = struct
+  type t = {
+    username: string;
+    password: string;
+    user_agent: string;
+    server: string;
+    hostnames: string list;
+    ips: Ipaddr.t list;
+  }
 
+  (*
+  GET /nic/update?hostname=yourhostname&myip=ipaddress&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG HTTP/1.0
+  Host: members.dyndns.org
+  Authorization: Basic base-64-authorization
+  User-Agent: Company - Device - Version Number
+  *)
+  let to_string update =
+    Printf.sprintf "GET /nic/update?%s HTTP/1.0\r\nHost: %s\r\nAuthorization: %s\r\nUser-agent: %s\r\n"
+      (Uri.encoded_of_query ["hostname", update.hostnames; "myip", List.map Ipaddr.to_string update.ips])
+      update.server
+      ("Basic " ^ (B64.encode (Printf.sprintf "%s:%s" update.username update.password)))
+      update.user_agent
 
+  let of_string string =
+    let module R = Cohttp.Request.Make(String_io.M) in
+    let buf = String_io.open_in string in
+    match R.read buf with
+    | `Eof -> Error (`Msg "EOF reading HTTP request")
+    | `Invalid x -> Error (`Msg x)
+    | `Ok req ->
+      let user_agent = match Cohttp.Header.get req.Cohttp.Request.headers "user-agent" with None -> "" | Some x -> x in
+      Ok {
+        username = "";
+        password = "";
+        user_agent;
+        server = "";
+        hostnames = [];
+        ips = [];
+      }
+end

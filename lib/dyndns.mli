@@ -14,12 +14,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  *)
 
-type update = {
-  username: string;
-  password: string;
-  hostname: string list; (** a list of hostnames to be changed at once *)
-  ip: Ipaddr.t list; (** every hostname is associated with this list of IP addresses *)
-}
-(** A single dynamic DNS update request *)
+module Update : sig
+  type t = {
+    username: string;
+    password: string;
+    user_agent: string; (** our user-agent (application name) *)
+    server: string; (** hostname of remote service *)
+    hostnames: string list; (** a list of hostnames to be changed at once *)
+    ips: Ipaddr.t list; (** every hostname is associated with this list of IP addresses *)
+  }
+  (** A single dynamic DNS update request *)
 
+  val of_string: string -> (t, [ `Msg of string ]) result
 
+  val to_string: t -> string
+end
